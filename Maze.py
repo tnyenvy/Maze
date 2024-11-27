@@ -1,8 +1,10 @@
 import streamlit as st
 import math
+import matplotlib.pyplot as plt
+import numpy as np
 from simpleai.search import SearchProblem, astar
 
-# Define cost of moving around the map
+# Define the cost of moving around the map
 cost_regular = 1.0
 cost_diagonal = 1.7
 
@@ -61,9 +63,7 @@ class MazeSolver(SearchProblem):
             x -= 1
         elif action == "right":
             x += 1
-
-        new_state = (x, y)
-        return new_state
+        return (x, y)
 
     def is_goal(self, state):
         return state == self.goal
@@ -76,46 +76,46 @@ class MazeSolver(SearchProblem):
         gx, gy = self.goal
         return math.sqrt((x - gx) ** 2 + (y - gy) ** 2)
 
-# Streamlit UI
-st.set_page_config(page_title="Maze Solver", layout="wide")
-st.title("Maze Solver App")
-st.markdown("### Welcome to the Maze Solver! Use the tool below to visualize and solve a maze.")
+if __name__ == "__main__":
+    st.title("Maze Solver")
 
-# Display the maze map
-st.markdown("#### Original Maze Map")
-st.text_area("Maze Map", MAP, height=200)
+    # Convert map to a list
+    MAP = [list(x) for x in MAP.split("\n") if x]
 
-# Convert map to a list
-MAP = [list(x) for x in MAP.split("\n") if x]
+    # Create maze solver object
+    problem = MazeSolver(MAP)
 
-# Create maze solver object
-problem = MazeSolver(MAP)
+    # Run the solver
+    result = astar(problem, graph_search=True)
 
-# Run the solver
-result = astar(problem, graph_search=True)
+    # Extract the path
+    path = [x[1] for x in result.path()]
 
-# Extract the path
-path = [x[1] for x in result.path()]
+    # Create a 2D array to display the maze
+    maze_display = np.array(MAP)
+    maze_path = maze_display.copy()
 
-# Display the solved maze
-st.markdown("#### Solved Maze")
-solved_maze = ""
-for y in range(len(MAP)):
-    for x in range(len(MAP[y])):
-        if (x, y) == problem.initial:
-            solved_maze += '🟢'  # Use an emoji to represent the start point
-        elif (x, y) == problem.goal:
-            solved_maze += '❌'  # Use an emoji to represent the goal
-        elif (x, y) in path:
-            solved_maze += '·'  # Use a different symbol for the path
-        else:
-            solved_maze += MAP[y][x]
-    solved_maze += "\n"
+    # Mark the path in the maze
+    for y in range(len(MAP)):
+        for x in range(len(MAP[y])):
+            if (x, y) in path:
+                maze_path[y][x] = '·'
 
-# Display the solution in a styled text area
-st.text_area("Solution", solved_maze, height=300)
+    # Display the maze using Matplotlib
+    fig, ax = plt.subplots(figsize=(10, 10))
+    ax.imshow(maze_path == '#', cmap='gray', interpolation='none')
+    for y in range(len(maze_path)):
+        for x in range(len(maze_path[y])):
+            if maze_path[y][x] == '·':
+                ax.text(x, y, '·', color='red', ha='center', va='center')
+            elif maze_path[y][x] == 'o':
+                ax.text(x, y, 'o', color='green', ha='center', va='center')
+            elif maze_path[y][x] == 'x':
+                ax.text(x, y, 'x', color='blue', ha='center', va='center')
 
-# Add a footer for additional information
-st.markdown("---")
-st.markdown("**Developed by**: Your Name")
-st.markdown("**References**: A. Artasanchez, P. Joshi, *Artificial Intelligence with Python, 2nd Edition, Packt, 2020*")
+    ax.set_xticks(np.arange(0, len(maze_path[0]), 1))
+    ax.set_yticks(np.arange(0, len(maze_path), 1))
+    ax.set_xticklabels([])
+    ax.set_yticklabels([])
+    ax.grid(color='black', linestyle='-', linewidth=1)
+    st.pyplot(fig)
