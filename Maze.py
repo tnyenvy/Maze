@@ -77,9 +77,12 @@ class MazeSolver(SearchProblem):
         return math.sqrt((x - gx) ** 2 + (y - gy) ** 2)
 
 # Streamlit UI
-st.title("Maze Solver")
+st.set_page_config(page_title="Maze Solver", layout="wide")
+st.title("Maze Solver App")
+st.markdown("### Welcome to the Maze Solver! Use the tool below to visualize and solve a maze.")
 
 # Display the maze map
+st.markdown("#### Original Maze Map")
 st.text_area("Maze Map", MAP, height=200)
 
 # Convert map to a list
@@ -95,18 +98,24 @@ result = astar(problem, graph_search=True)
 path = [x[1] for x in result.path()]
 
 # Display the solved maze
-st.subheader("Solved Maze")
+st.markdown("#### Solved Maze")
 solved_maze = ""
 for y in range(len(MAP)):
     for x in range(len(MAP[y])):
         if (x, y) == problem.initial:
-            solved_maze += 'o'
+            solved_maze += '🟢'  # Use an emoji to represent the start point
         elif (x, y) == problem.goal:
-            solved_maze += 'x'
+            solved_maze += '❌'  # Use an emoji to represent the goal
         elif (x, y) in path:
-            solved_maze += '·'
+            solved_maze += '·'  # Use a different symbol for the path
         else:
             solved_maze += MAP[y][x]
     solved_maze += "\n"
 
+# Display the solution in a styled text area
 st.text_area("Solution", solved_maze, height=300)
+
+# Add a footer for additional information
+st.markdown("---")
+st.markdown("**Developed by**: Your Name")
+st.markdown("**References**: A. Artasanchez, P. Joshi, *Artificial Intelligence with Python, 2nd Edition, Packt, 2020*")
