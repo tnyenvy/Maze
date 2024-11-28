@@ -1,6 +1,6 @@
 import streamlit as st
+from aima3.search import Problem, breadth_first_search
 import numpy as np
-from collections import deque
 
 # Define the map with obstacles and walls
 MAP = """
@@ -19,47 +19,40 @@ MAP = """
 # Convert map to a 2D list
 MAP = [list(row) for row in MAP.split("\n") if row]
 
-class MazeProblem:
-    def __init__(self, board, initial, goal):
+
+# Define the MazeProblem class compatible with AIMA
+class MazeProblem(Problem):
+    def __init__(self, initial, goal, board):
+        super().__init__(initial, goal)
         self.board = board
-        self.initial = initial
-        self.goal = goal
 
     def actions(self, state):
+        """Return possible moves from the current state."""
         x, y = state
-        actions = []
-        moves = [("up", (x, y - 1)), ("down", (x, y + 1)), ("left", (x - 1, y)), ("right", (x + 1, y))]
-        for action, (new_x, new_y) in moves:
-            if 0 <= new_y < len(self.board) and 0 <= new_x < len(self.board[0]) and self.board[new_y][new_x] != "#":
-                actions.append((action, (new_x, new_y)))
-        return actions
+        moves = [
+            ("up", (x, y - 1)),
+            ("down", (x, y + 1)),
+            ("left", (x - 1, y)),
+            ("right", (x + 1, y)),
+        ]
+        valid_actions = []
+        for action, (nx, ny) in moves:
+            if 0 <= ny < len(self.board) and 0 <= nx < len(self.board[0]) and self.board[ny][nx] != "#":
+                valid_actions.append((action, (nx, ny)))
+        return valid_actions
 
-    def is_goal(self, state):
+    def result(self, state, action):
+        """Return the resulting state after applying an action."""
+        return action[1]
+
+    def goal_test(self, state):
+        """Check if the current state is the goal."""
         return state == self.goal
 
-def bfs(problem):
-    queue = deque([(problem.initial, [])])
-    visited = set()
-
-    while queue:
-        current_state, path = queue.popleft()
-
-        if current_state in visited:
-            continue
-        visited.add(current_state)
-
-        if problem.is_goal(current_state):
-            return path + [current_state]
-
-        for action, next_state in problem.actions(current_state):
-            if next_state not in visited:
-                queue.append((next_state, path + [current_state]))
-
-    return None
 
 # Streamlit application
 if __name__ == "__main__":
-    st.title("Giải mã mê cung")
+    st.title("Giải mã mê cung (BFS - AIMA)")
 
     # Display the maze as an image using ASCII art
     st.subheader("Mẫu mê cung:")
@@ -84,10 +77,12 @@ if __name__ == "__main__":
         elif start_point == end_point:
             st.error("Điểm Xuất phát và Đích đến phải khác nhau!")
         else:
-            # Run BFS
-            path = bfs(MazeProblem(MAP, start_point, end_point))
+            # Solve the maze using BFS from AIMA
+            problem = MazeProblem(start_point, end_point, MAP)
+            solution = breadth_first_search(problem)
 
-            if path:
+            if solution:
+                path = [node for node in solution.path()]
                 st.success("Đã tìm được đường đi hợp lý!")
 
                 # Create an HTML representation of the maze with colors
@@ -131,22 +126,22 @@ if __name__ == "__main__":
                 </style>
                 <div class="maze">
                 """
-                
+
                 for y in range(len(MAP)):
                     for x in range(len(MAP[y])):
                         if (x, y) == start_point:
                             maze_html += '<div class="cell start">S</div>'
                         elif (x, y) == end_point:
                             maze_html += '<div class="cell end">E</div>'
-                        elif (x, y) in path:
+                        elif (x, y) in [state for action, state in path]:
                             maze_html += '<div class="cell path">·</div>'
                         elif MAP[y][x] == '#':
                             maze_html += '<div class="cell wall">#</div>'
                         else:
                             maze_html += '<div class="cell empty">.</div>'
-                
+
                 maze_html += "</div>"
-                
+
                 # Display the maze with the path highlighted
                 st.markdown(maze_html, unsafe_allow_html=True)
             else:
