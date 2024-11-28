@@ -1,6 +1,5 @@
 import streamlit as st
 from aima3.search import Problem, breadth_first_search
-import numpy as np
 
 # Define the map with obstacles and walls
 MAP = """
@@ -18,7 +17,6 @@ MAP = """
 
 # Convert map to a 2D list
 MAP = [list(row) for row in MAP.split("\n") if row]
-
 
 # Define the MazeProblem class compatible with AIMA
 class MazeProblem(Problem):
@@ -54,7 +52,6 @@ class MazeProblem(Problem):
 if __name__ == "__main__":
     st.title("Giải mã mê cung (BFS - AIMA)")
 
-    # Display the maze as an image using ASCII art
     st.subheader("Mẫu mê cung:")
     for row in MAP:
         st.text("".join(row))
@@ -70,31 +67,26 @@ if __name__ == "__main__":
     start_point = (int(start_x), int(start_y))
     end_point = (int(end_x), int(end_y))
 
-    # Validate the user inputs
     if st.button("Tìm đường"):
         if MAP[start_point[1]][start_point[0]] == "#" or MAP[end_point[1]][end_point[0]] == "#":
             st.error("Điểm Xuất phát hoặc Đích đến nằm trên vật cản. Vui lòng chọn lại!")
         elif start_point == end_point:
             st.error("Điểm Xuất phát và Đích đến phải khác nhau!")
         else:
-            # Solve the maze using BFS from AIMA
             problem = MazeProblem(start_point, end_point, MAP)
             solution = breadth_first_search(problem)
 
             if solution:
-                path = [node for node in solution.path()]
+                path = [node.state for node in solution.path()]
                 st.success("Đã tìm được đường đi hợp lý!")
 
-                # Create an HTML representation of the maze with colors
+                # Build the HTML representation of the maze
                 maze_html = """
                 <style>
                 .maze {
                     display: grid;
-                    grid-template-columns: repeat(30, 20px);
+                    grid-template-columns: repeat(""" + str(len(MAP[0])) + """, 20px);
                     gap: 2px;
-                    border: 5px solid red;
-                    padding: 10px;
-                    background-color: #fff;
                 }
                 .cell {
                     width: 20px;
@@ -102,11 +94,12 @@ if __name__ == "__main__":
                     display: flex;
                     align-items: center;
                     justify-content: center;
+                    font-size: 12px;
+                    font-weight: bold;
                     border: 1px solid #ddd;
                 }
                 .wall {
                     background-color: black;
-                    color: white;
                 }
                 .start {
                     background-color: green;
@@ -128,21 +121,19 @@ if __name__ == "__main__":
                 """
 
                 for y in range(len(MAP)):
-                    for x in range(len(MAP[y])):
+                    for x in range(len(MAP[0])):
                         if (x, y) == start_point:
                             maze_html += '<div class="cell start">S</div>'
                         elif (x, y) == end_point:
                             maze_html += '<div class="cell end">E</div>'
-                        elif (x, y) in [state for action, state in path]:
+                        elif (x, y) in path:
                             maze_html += '<div class="cell path">·</div>'
-                        elif MAP[y][x] == '#':
-                            maze_html += '<div class="cell wall">#</div>'
+                        elif MAP[y][x] == "#":
+                            maze_html += '<div class="cell wall"></div>'
                         else:
-                            maze_html += '<div class="cell empty">.</div>'
-
+                            maze_html += '<div class="cell empty"></div>'
                 maze_html += "</div>"
 
-                # Display the maze with the path highlighted
                 st.markdown(maze_html, unsafe_allow_html=True)
             else:
                 st.error("Rất tiếc, không thể tìm được đường đi. Vui lòng thử lại!")
